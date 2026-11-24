@@ -8,13 +8,13 @@ mesh Th = buildmesh(C1(25) + C2(25) + D(-30));
 
 // The finite element space defined over Th is called here Vh
 fespace Vh(Th, P1);
-Vh w, wNext, v;
+Vh w, wNext, T, v;
 Vh mu, muNext;
 
 // Parameters for the fixed-point method
 func beta = 200;
 real muT = 50;
-real n = 0.5;
+real n = 0.1;
 real epsilon = 1e-8;
 real tolerance = 1e-6;
 int maxIterations = 100;
@@ -56,45 +56,34 @@ for (int k = 0; k < maxIterations; k++) {
         break;
 }
 
-// Parameters for the Newton method
-real newtonTolerance = 1e-6;
-int newtonMaxIterations = 50;
-Vh h, phi;
+// Parameter k
+real k = 1.0;
 
-// Initialisation: the fixed-point solution is used as the first Newton iterate
-wNext = w;
+// Define the right hand side term /!\ inclure le k et le mu dans le terme de droite
+func f = dx(w)*dx(w)*mu/k;
 
-for (int k = 0; k < newtonMaxIterations; k++) {
-    solve Newton(h, phi, solver=LU)
-        = int2d(Th)(
-              muT * pow(sqrt(dx(w)*dx(w) + dy(w)*dy(w) + epsilon*epsilon), n-1)
-                * (dx(h)*dx(phi) + dy(h)*dy(phi))
-              + muT * (n-1)
-                * pow(sqrt(dx(w)*dx(w) + dy(w)*dy(w) + epsilon*epsilon), n-3)
-                * (dx(w)*dx(h) + dy(w)*dy(h))
-                * (dx(w)*dx(phi) + dy(w)*dy(phi))
-          )
-          - int2d(Th)(
-              - muT
-                * pow(sqrt(dx(w)*dx(w) + dy(w)*dy(w) + epsilon*epsilon), n-1)
-                * (dx(w)*dx(phi) + dy(w)*dy(phi))
-              + beta*phi
-          )
-          + on(C1, h=0)
-          + on(C2, h=0)
-          + on(D, h=0);
+// Flux normal impose sur C2 : dT/dn = fluxC2.
+// Remplacer 0. par la valeur souhaitee.
+func fluxC2 = 0.;
 
-    w = w + h;
+// Define the PDE
+solve Poisson(T, v, solver=LU)
+    = int2d(Th)(    // The bilinear part
+          dx(T)*dx(v)
+        + dy(T)*dy(v)
+    )
+    - int2d(Th)(    // The right hand side
+          f*v
+    )
+        + int1d(Th, C2)( // Condition de Neumann : dT/dn = fluxC2
+            fluxC2*v
+        )
+    + on(C1, T=0)    // Dirichlet condition on C1
+    + on(D, T=100);
 
-    real errH = sqrt(int2d(Th)(h*h));
-    cout << "Newton iteration " << k+1
-         << " : ||h|| = " << errH << endl;
+// Plot the result
+plot(T, value=true, fill=true, wait=true, cmm="Temperature distribution");
 
-    if (errH < newtonTolerance)
-        break;
-}
-
-// Plot the Newton solution
 plot(w, value=true, fill=true);
 
 cout << "CPU time = " << (clock()-cpu) << endl;
