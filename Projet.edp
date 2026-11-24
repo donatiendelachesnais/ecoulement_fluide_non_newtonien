@@ -56,8 +56,48 @@ for (int k = 0; k < maxIterations; k++) {
         break;
 }
 
-// Plot the result
+// Parameters for the Newton method
+real newtonTolerance = 1e-6;
+int newtonMaxIterations = 50;
+Vh h, phi;
+
+// Initialisation: the fixed-point solution is used as the first Newton iterate
+wNext = w;
+
+for (int k = 0; k < newtonMaxIterations; k++) {
+    solve Newton(h, phi, solver=LU)
+        = int2d(Th)(
+              muT * pow(sqrt(dx(w)*dx(w) + dy(w)*dy(w) + epsilon*epsilon), n-1)
+                * (dx(h)*dx(phi) + dy(h)*dy(phi))
+              + muT * (n-1)
+                * pow(sqrt(dx(w)*dx(w) + dy(w)*dy(w) + epsilon*epsilon), n-3)
+                * (dx(w)*dx(h) + dy(w)*dy(h))
+                * (dx(w)*dx(phi) + dy(w)*dy(phi))
+          )
+          - int2d(Th)(
+              - muT
+                * pow(sqrt(dx(w)*dx(w) + dy(w)*dy(w) + epsilon*epsilon), n-1)
+                * (dx(w)*dx(phi) + dy(w)*dy(phi))
+              + beta*phi
+          )
+          + on(C1, h=0)
+          + on(C2, h=0)
+          + on(D, h=0);
+
+    w = w + h;
+
+    real errH = sqrt(int2d(Th)(h*h));
+    cout << "Newton iteration " << k+1
+         << " : ||h|| = " << errH << endl;
+
+    if (errH < newtonTolerance)
+        break;
+}
+
+// Plot the Newton solution
 plot(w, value=true, fill=true);
 
-// Display the total computational time
 cout << "CPU time = " << (clock()-cpu) << endl;
+
+
+
