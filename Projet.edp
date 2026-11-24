@@ -8,27 +8,56 @@ mesh Th = buildmesh(C1(25) + C2(25) + D(-30));
 
 // The finite element space defined over Th is called here Vh
 fespace Vh(Th, P1);
-Vh u, v;// Define u and v as piecewise-P1 continuous functions
+Vh w, wNext, v;
+Vh mu, muNext;
 
-// Define the right hand side term
+// Parameters for the fixed-point method
 func beta = 200;
+real muT = 50;
+real n = 0.5;
+real epsilon = 1e-8;
+real tolerance = 1e-6;
+int maxIterations = 100;
 
-// Get the clock in second
-real cpu=clock();
+// Initialisation
+w = 0;
+mu = muT;
 
-// Define the PDE
-solve Poisson(u, v, solver=LU)
-    = int2d(Th)(    // The bilinear part
-          dx(u)*dx(v)
-        + dy(u)*dy(v)
-    )
-    - int2d(Th)(    // The right hand side
-          beta*v
-    )
-    + on(C1, u=0);   // The Dirichlet boundary condition
+real cpu = clock();
+
+for (int k = 0; k < maxIterations; k++) {
+    // mu^(k+1) = muT |grad(w^k)|^(n-1)
+    muNext = muT * pow(
+        sqrt(dx(w)*dx(w) + dy(w)*dy(w) + epsilon*epsilon),
+        n-1
+    );
+
+    // Solve -div(mu^(k+1) grad(w^(k+1))) = beta
+    solve FixedPoint(wNext, v, solver=LU)
+        = int2d(Th)(
+              muNext*(dx(wNext)*dx(v) + dy(wNext)*dy(v))
+          )
+          - int2d(Th)(beta*v)
+          + on(C1, wNext=0)
+          + on(C2, wNext=0)
+          + on(D, wNext=0);
+
+    real errW = sqrt(int2d(Th)((wNext-w)*(wNext-w)));
+    real errMu = sqrt(int2d(Th)((muNext-mu)*(muNext-mu)));
+
+    cout << "Iteration " << k+1
+         << " : errW = " << errW
+         << " , errMu = " << errMu << endl;
+
+    mu = muNext;
+    w = wNext;
+
+    if (errW < tolerance && errMu < tolerance)
+        break;
+}
 
 // Plot the result
-plot(u);
+plot(w, value=true, fill=true);
 
 // Display the total computational time
 cout << "CPU time = " << (clock()-cpu) << endl;
