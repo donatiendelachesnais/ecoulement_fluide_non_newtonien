@@ -8,27 +8,29 @@ mesh Th = buildmesh(C1(25) + C2(25) + D(-30));
 
 // The finite element space defined over Th is called here Vh
 fespace Vh(Th, P1);
-Vh u, v;// Define u and v as piecewise-P1 continuous functions
+Vh T, v;// Define u and v as piecewise-P1 continuous functions
 
-// Define the right hand side term
-func beta = 200;
+// Define the right hand side term /!\ inclure le k et le mu0 dans le terme de droite
+func deltaw = 10;
 
 // Get the clock in second
 real cpu=clock();
 
 // Define the PDE
-solve Poisson(u, v, solver=LU)
+solve Poisson(T, v, solver=LU)
     = int2d(Th)(    // The bilinear part
-          dx(u)*dx(v)
-        + dy(u)*dy(v)
+          dx(T)*dx(v)
+        + dy(T)*dy(v)
     )
     - int2d(Th)(    // The right hand side
-          beta*v
+          deltaw*v
     )
-    + on(C1, u=0);   // The Dirichlet boundary condition
+    + on(C1, T=0)    // Dirichlet condition on C1
+    + on(C2, T=0)
+    + on(D, T=0);   // Additional Dirichlet condition on C2
 
 // Plot the result
-plot(u);
+plot(T);
 
 // Display the total computational time
 cout << "CPU time = " << (clock()-cpu) << endl;
