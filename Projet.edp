@@ -4,17 +4,14 @@ border C2(t=pi, 2*pi){x=cos(t); y=sin(t);}
 border D(t=0, 2*pi){x=0.5*cos(t)+0.3; y=0.5*sin(t);}
 
 // Construit un maillage triangulaire entre les deux cercles :
-// C(50) discrétise le cercle extérieur en 50 segments ; D(-30)
-// parcourt le cercle intérieur dans le sens horaire (30 segments),
-// ce qui en fait un trou dans le domaine maillé.
 mesh Th = buildmesh(C1(25) + C2(25) + D(-30));
 
 // The finite element space defined over Th is called here Vh
 fespace Vh(Th, P1);
 Vh u, v;// Define u and v as piecewise-P1 continuous functions
 
-// Define a function f
-func f= x*y;
+// Define the right hand side term
+func beta = 200;
 
 // Get the clock in second
 real cpu=clock();
@@ -26,7 +23,7 @@ solve Poisson(u, v, solver=LU)
         + dy(u)*dy(v)
     )
     - int2d(Th)(    // The right hand side
-          f*v
+          beta*v
     )
     + on(C1, u=0);   // The Dirichlet boundary condition
 
