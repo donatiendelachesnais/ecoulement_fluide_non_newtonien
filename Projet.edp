@@ -8,7 +8,7 @@ mesh Th = buildmesh(C1(25) + C2(25) + D(-30));
 
 // The finite element space defined over Th is called here Vh
 fespace Vh(Th, P1);
-Vh w, wNext, v;
+Vh w, wNext, T, v;
 Vh mu, muNext;
 
 // Parameters for the fixed-point method
@@ -56,8 +56,36 @@ for (int k = 0; k < maxIterations; k++) {
         break;
 }
 
+// Parameter k
+real k = 1.0;
+
+// Define the right hand side term /!\ inclure le k et le mu dans le terme de droite
+func f = dx(w)*dx(w)*mu/k;
+
+// Flux normal impose sur C2 : dT/dn = fluxC2.
+// Remplacer 0. par la valeur souhaitee.
+func fluxC2 = 0.;
+
+// Define the PDE
+solve Poisson(T, v, solver=LU)
+    = int2d(Th)(    // The bilinear part
+          dx(T)*dx(v)
+        + dy(T)*dy(v)
+    )
+    - int2d(Th)(    // The right hand side
+          f*v
+    )
+        + int1d(Th, C2)( // Condition de Neumann : dT/dn = fluxC2
+            fluxC2*v
+        )
+    + on(C1, T=0)    // Dirichlet condition on C1
+    + on(D, T=100);
+
 // Plot the result
-plot(w, value=true, fill=true);
+plot(T, value=true, fill=true, wait=true, cmm="Temperature distribution");
+
+// Plot the result
+plot(w, value=true, fill=true, wait=true, cmm="Velocity field");
 
 // Display the total computational time
 cout << "CPU time = " << (clock()-cpu) << endl;
