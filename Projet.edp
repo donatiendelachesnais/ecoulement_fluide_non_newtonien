@@ -67,7 +67,7 @@ func f = dx(w)*dx(w)*mu/k;
 func fluxC2 = 0.;
 
 // Define the PDE
-solve Poisson(T, v, solver=LU)
+solve Temperature(T, v, solver=LU)
     = int2d(Th)(    // The bilinear part
           dx(T)*dx(v)
         + dy(T)*dy(v)
@@ -75,16 +75,15 @@ solve Poisson(T, v, solver=LU)
     - int2d(Th)(    // The right hand side
           f*v
     )
-        + int1d(Th, C2)( // Condition de Neumann : dT/dn = fluxC2
-            fluxC2*v
+    + int1d(Th, C2)( // Condition de Neumann : dT/dn = fluxC2 (inutile ici, permet de montrer qu'on ne l'a pas oublier)
+        fluxC2*v
         )
     + on(C1, T=0)    // Dirichlet condition on C1
     + on(D, T=100);
 
 // Plot the result
 plot(T, value=true, fill=true, wait=true, cmm="Temperature distribution");
-
-plot(w, value=true, fill=true);
+plot(w, value=true, fill=true, wait=true, cmm="w distribution");
 
 cout << "CPU time = " << (clock()-cpu) << endl;
 

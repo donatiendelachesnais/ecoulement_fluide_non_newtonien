@@ -31,8 +31,8 @@ real newtonTolerance = 1e-6;
 int newtonMaxIterations = 50;
 Vh h, phi;
 
-// Initialisation: the fixed-point solution is used as the first Newton iterate
-wNext = w;
+// Initialisation : démarrer Newton avec la solution nulle.
+w = 0;
 
 for (int k = 0; k < newtonMaxIterations; k++) {
     solve Newton(h, phi, solver=LU)
@@ -75,7 +75,7 @@ func f = dx(w)*dx(w)*mu/k;
 func fluxC2 = 0.;
 
 // Define the PDE
-solve Poisson(T, v, solver=LU)
+solve Temperature(T, v, solver=LU)
     = int2d(Th)(    // The bilinear part
           dx(T)*dx(v)
         + dy(T)*dy(v)
