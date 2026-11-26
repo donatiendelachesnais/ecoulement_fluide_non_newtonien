@@ -24,6 +24,8 @@ w = 0;
 mu = muT;
 
 real cpu = clock();
+ofstream errorFile("iteration_errors.csv");
+errorFile << "iteration,errW,errMu" << endl;
 
 for (int k = 0; k < maxIterations; k++) {
     // mu^(k+1) = muT |grad(w^k)|^(n-1)
@@ -44,6 +46,7 @@ for (int k = 0; k < maxIterations; k++) {
 
     real errW = sqrt(int2d(Th)((wNext-w)*(wNext-w)));
     real errMu = sqrt(int2d(Th)((muNext-mu)*(muNext-mu)));
+    errorFile << k+1 << "," << errW << "," << errMu << endl;
 
     cout << "Iteration " << k+1
          << " : errW = " << errW
@@ -55,6 +58,7 @@ for (int k = 0; k < maxIterations; k++) {
     if (errW < tolerance && errMu < tolerance)
         break;
 }
+errorFile << flush;
 
 // Parameter k
 real k = 1.0;

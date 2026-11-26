@@ -68,7 +68,7 @@ for (int k = 0; k < newtonMaxIterations; k++) {
 real k = 1.0;
 
 // Define the right hand side term /!\ inclure le k et le mu dans le terme de droite
-func f = dx(w)*dx(w)*mu/k;
+func f = (dx(w)*dx(w)+dy(w)*dy(w))*mu/k;
 
 // Flux normal impose sur C2 : dT/dn = fluxC2.
 // Remplacer 0. par la valeur souhaitee.
@@ -91,7 +91,6 @@ solve Temperature(T, v, solver=LU)
 
 // Plot the result
 plot(T, value=true, fill=true, wait=true, cmm="Temperature distribution");
-
 
 // Plot the Newton solution
 plot(w, value=true, fill=true);
