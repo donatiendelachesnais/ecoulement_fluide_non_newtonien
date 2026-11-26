@@ -14,7 +14,7 @@ Vh mu, muNext;
 // Parameters for the fixed-point method
 func beta = 200;
 real muT = 50;
-real n = 0.1;
+real n = 0.7;
 real epsilon = 1e-8;
 real tolerance = 1e-6;
 int maxIterations = 100;
@@ -62,8 +62,7 @@ real k = 1.0;
 // Define the right hand side term /!\ inclure le k et le mu dans le terme de droite
 func f = (dx(w)*dx(w)+dy(w)*dy(w))*mu/k;
 
-// Flux normal impose sur C2 : dT/dn = fluxC2.
-// Remplacer 0. par la valeur souhaitee.
+// Flux normal impose sur C2 : dT/dn = fluxC2
 func fluxC2 = 0.;
 
 // Define the PDE
