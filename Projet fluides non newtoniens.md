@@ -152,7 +152,7 @@ D(|\nabla w|^2)_{w^k}[h]\\
 \end{aligned}
 $$
 
-En remplaçant cette expression dans le calcul de $DF(w^k)[h]$, on obtient :
+En remplaçant la dérivée directionnelle de $\mu$ calculée ci-dessus dans celle de $F$, on obtient :
 
 $$
 \boxed{
@@ -166,6 +166,37 @@ DF(w^k)[h]
 $$
 
 Nous avons donc calculé la dérivée directionnelle du terme non linéaire $F$, ce qui va nous permettre d'écrire le problème linéarisé de Newton.
+
+### Loi régularisée utilisée dans le code
+
+Dans `methode_newton.edp`, la loi (2) est régularisée afin d'éviter une singularité lorsque $\nabla w=0$. En posant $s=|\nabla w|^2$ et $q_\epsilon=\sqrt{s+\epsilon^2}$, le code utilise
+$$
+\mu_\epsilon(s)=\mu_T q_\epsilon^{\,n-1}
+=\mu_T(s+\epsilon^2)^{(n-1)/2}.
+$$
+Sa dérivée par rapport à $s$ est
+$$
+\begin{aligned}
+\mu_\epsilon'(s)
+&=\frac{d}{ds}\left[\mu_T(s+\epsilon^2)^{(n-1)/2}\right]\\
+&=\frac{\mu_T(n-1)}{2}(s+\epsilon^2)^{(n-3)/2}\\
+&=\frac{\mu_T(n-1)}{2}q_\epsilon^{\,n-3}.
+\end{aligned}
+$$
+L'exposant $n-3$ provient donc de la dérivation de la puissance $(s+\epsilon^2)^{(n-1)/2}$. Dans le code, `gradWNorm` vaut $q_\epsilon$, `muW` vaut $\mu_\epsilon(s)$ et `dMuDs` vaut $\mu_\epsilon'(s)$. Le Jacobien contient $2\,\texttt{dMuDs}$, ce qui donne le facteur $2\mu'(s)$ de la formule générale.
+
+Les paramètres utilisés sont $\beta=200$, $\mu_T=50$, $n=1$ et $\epsilon=10^{-8}$. Avec $n=1$, $\mu_\epsilon(s)=\mu_T$ et $\mu_\epsilon'(s)=0$ : le terme contenant `dMuDs` s'annule et le problème en $w$ est linéaire. Pour $n\ne1$, la formule générale de Newton s'applique avec cette loi régularisée.
+
+En notant $s_k=|\nabla w^k|^2$ et $q_k=\sqrt{s_k+\epsilon^2}$, le système de Newton assemblé par le code s'écrit explicitement
+$$
+\begin{aligned}
+&\int_\Omega \mu_T q_k^{\,n-1}\nabla h\cdot\nabla\varphi\\
+&+\int_\Omega \mu_T(n-1)q_k^{\,n-3}
+(\nabla w^k\cdot\nabla h)(\nabla w^k\cdot\nabla\varphi)\\
+&=\beta\int_\Omega\varphi
+-\int_\Omega \mu_T q_k^{\,n-1}\nabla w^k\cdot\nabla\varphi.
+\end{aligned}
+$$
 
 ### Construction du problème linéarisé de Newton
 
@@ -249,6 +280,70 @@ $$
 
 On répète ensuite cette procédure jusqu'à ce que la correction soit suffisamment petite, ce qui indique que l'algorithme a convergé vers une solution du problème non linéaire.
 
+
+### Lien entre les formulations faible et forte
+
+Posons
+$$
+F_k=\mu(|\nabla w^k|^2)\nabla w^k,
+\qquad
+M_k=M(\nabla w^k)
+=\mu(|\nabla w^k|^2)I
++2\mu'(|\nabla w^k|^2)\,\nabla w^k\otimes\nabla w^k.
+$$
+Avec la convention $(a\otimes a)b=a(a\cdot b)$, le calcul de la dérivée
+directionnelle donne bien $DF(w^k)[h]=M_k\nabla h$. La formulation (6) devient
+alors
+$$
+\int_\Omega M_k\nabla h\cdot\nabla\varphi
+=\beta\int_\Omega\varphi-\int_\Omega F_k\cdot\nabla\varphi.
+$$
+
+En intégrant par parties, le terme $-\int_\Omega F_k\cdot\nabla\varphi$
+contribue $+\int_\Omega(\nabla\cdot F_k)\varphi$ (à un terme de bord près).
+On obtient donc, dans $\Omega$,
+$$
+-\nabla\cdot\left(M(\nabla w^k)\nabla h\right)
+=\nabla\cdot\left(\mu(|\nabla w^k|^2)\nabla w^k\right)+\beta.
+$$
+Le signe indiqué dans l'équation proposée est donc erroné : il faut un signe
+$+$ devant la divergence de $\mu(|\nabla w^k|^2)\nabla w^k$. Sur la partie
+de Neumann, la condition naturelle correspondante porte sur le flux total,
+$(M_k\nabla h+F_k)\cdot n=0$; les termes de bord s'annulent aussi pour les
+fonctions tests nulles sur la partie de Dirichlet.
+
+
+
 ## Problème couplé
 
 On calcule les suites $w_l$ et $T_l$.
+
+## Paramètres et autres formules de `methode_newton.edp`
+
+Le domaine numérique est délimité par les arcs du cercle unité
+$$
+C_1:\ (x,y)=(\cos t,\sin t),\quad 0\le t\le\pi,
+\qquad
+C_2:\ (x,y)=(\cos t,\sin t),\quad \pi\le t\le2\pi,
+$$
+et par le cercle intérieur
+$$
+D:\ (x,y)=(0.3+0.5\cos t,\ 0.5\sin t),\quad 0\le t\le2\pi.
+$$
+Le maillage est construit par `buildmesh(C1(25)+C2(25)+D(-30))` avec des éléments finis $P_1$. La correction vérifie $h=0$ sur $C_1$, $C_2$ et $D$; l'itération initiale est $w^0=0$.
+
+Le critère d'arrêt du code est la norme $L^2$ de la correction :
+$$
+\|h\|_{L^2(\Omega)}
+=\left(\int_\Omega h^2\right)^{1/2}<10^{-6},
+$$
+avec au plus $50$ itérations de Newton. Les paramètres `tolerance` et `maxIterations` déclarés pour la méthode du point fixe ne sont pas utilisés par cette boucle.
+
+Pour la température, le code utilise $k=1$ et définit
+$$
+f=\frac{\mu}{k}|\nabla w|^2
+=\frac{\mu}{k}\left((\partial_x w)^2+(\partial_y w)^2\right).
+$$
+Il résout la formulation faible déjà donnée plus haut, avec $T=0$ sur $C_1$, $T=100$ sur $D$ et `fluxC2` nul sur $C_2$. Le champ `mu` est initialisé à $\mu_T$ et n'est pas recalculé après la résolution de $w$; cela correspond à la loi utilisée ici puisque $n=1$. Si $n$ est modifié, il faudra recalculer `mu` à partir de $w$ pour représenter la viscosité non linéaire dans $f$.
+
+Enfin, si `fluxC2` désigne le flux normal sortant $\partial T/\partial n$, la formulation faible usuelle comporte $-\int_{C_2}\mathrm{fluxC2}\,v\,ds$. Le code assemble le terme avec un signe $+$; cela n'affecte pas le calcul présent car `fluxC2=0`.

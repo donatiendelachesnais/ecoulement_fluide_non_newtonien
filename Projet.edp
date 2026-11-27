@@ -14,7 +14,7 @@ Vh mu, muNext;
 // Parameters for the fixed-point method
 func beta = 200;
 real muT = 50;
-real n = 0.7;
+real ntarget = 0.7;
 real epsilon = 1e-8;
 real tolerance = 1e-6;
 int maxIterations = 100;
@@ -24,41 +24,47 @@ w = 0;
 mu = muT;
 
 real cpu = clock();
-ofstream errorFile("iteration_errors.csv");
-errorFile << "iteration,errW,errMu" << endl;
+// ofstream errorFile("iteration_errors.csv");
+// errorFile << "iteration,errW,errMu" << endl;
 
-for (int k = 0; k < maxIterations; k++) {
-    // mu^(k+1) = muT |grad(w^k)|^(n-1)
-    muNext = muT * pow(
-        sqrt(dx(w)*dx(w) + dy(w)*dy(w) + epsilon*epsilon),
-        n-1
-    );
+for (int stage = 0; stage <= 5; stage++) {
+    real pas = (1.0 - ntarget) / 5.0;
+    real n = 1.0 - 0.18 * stage;
+    cout << "Continuation : n = " << n << endl;
 
-    // Solve -div(mu^(k+1) grad(w^(k+1))) = beta
-    solve FixedPoint(wNext, v, solver=LU)
-        = int2d(Th)(
-              muNext*(dx(wNext)*dx(v) + dy(wNext)*dy(v))
-          )
-          - int2d(Th)(beta*v)
-          + on(C1, wNext=0)
-          + on(C2, wNext=0)
-          + on(D, wNext=0);
+    for (int k = 0; k < maxIterations; k++) {
+        // mu^(k+1) = muT |grad(w^k)|^(n-1)
+        muNext = muT * pow(
+            sqrt(dx(w)*dx(w) + dy(w)*dy(w) + epsilon*epsilon),
+            n-1
+        );
 
-    real errW = sqrt(int2d(Th)((wNext-w)*(wNext-w)));
-    real errMu = sqrt(int2d(Th)((muNext-mu)*(muNext-mu)));
-    errorFile << k+1 << "," << errW << "," << errMu << endl;
+        // Solve -div(mu^(k+1) grad(w^(k+1))) = beta
+        solve FixedPoint(wNext, v, solver=LU)
+            = int2d(Th)(
+                  muNext*(dx(wNext)*dx(v) + dy(wNext)*dy(v))
+              )
+              - int2d(Th)(beta*v)
+              + on(C1, wNext=0)
+              + on(C2, wNext=0)
+              + on(D, wNext=0);
 
-    cout << "Iteration " << k+1
-         << " : errW = " << errW
-         << " , errMu = " << errMu << endl;
+        real errW = sqrt(int2d(Th)((wNext-w)*(wNext-w)));
+        real errMu = sqrt(int2d(Th)((muNext-mu)*(muNext-mu)));
+        // errorFile << k+1 << "," << errW << "," << errMu << endl;
 
-    mu = 0.5 *mu + 0.5*muNext; // relaxation
-    w = wNext;
+        cout << "Iteration " << k+1
+             << " : errW = " << errW
+             << " , errMu = " << errMu << endl;
 
-    if (errW < tolerance && errMu < tolerance)
-        break;
+        mu = 0.5 *mu + 0.5*muNext; // relaxation
+        w = wNext;
+
+        if (errW < tolerance && errMu < tolerance)
+            break;
+    }
 }
-errorFile << flush;
+// errorFile << flush;
 
 // Parameter k
 real k = 1.0;
@@ -78,7 +84,7 @@ solve Temperature(T, v, solver=LU)
     - int2d(Th)(    // The right hand side
           f*v
     )
-    + int1d(Th, C2)( // Condition de Neumann : dT/dn = fluxC2 (inutile ici, permet de montrer qu'on ne l'a pas oublier)
+    - int1d(Th, C2)( // Condition de Neumann : dT/dn = fluxC2 (inutile ici, permet de montrer qu'on ne l'a pas oublier)
         fluxC2*v
         )
     + on(C1, T=0)    // Dirichlet condition on C1
