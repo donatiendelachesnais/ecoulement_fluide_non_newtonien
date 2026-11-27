@@ -16,8 +16,6 @@ func beta = 200;
 real muT = 50;
 real n = 1;
 real epsilon = 1e-8;
-real tolerance = 1e-6;
-int maxIterations = 100;
 
 // Initialisation
 w = 0;
@@ -58,9 +56,10 @@ for (int stage = 0; stage <= 5; stage++) {
               + on(C1, h=0)
               + on(C2, h=0)
               + on(D, h=0);
-
+        
+        // Mise à jour de la solution
         w = w + h;
-
+        // plot(h, value=true, fill=true, wait=true, cmm="Newton correction h at iteration " + k+1);
         real errH = sqrt(int2d(Th)(h*h));
         cout << "Newton iteration " << k+1
              << " : ||h|| = " << errH << endl;
@@ -68,6 +67,7 @@ for (int stage = 0; stage <= 5; stage++) {
         if (errH < newtonTolerance)
             break;
     }
+    plot(w, value=true, fill=true, wait=true, cmm="Solution for n = " + n);
 }
 
 // Parameter k
@@ -102,6 +102,3 @@ plot(T, value=true, fill=true, wait=true, cmm="Temperature distribution");
 plot(w, value=true, fill=true);
 
 cout << "CPU time = " << (clock()-cpu) << endl;
-
-
-

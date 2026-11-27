@@ -63,6 +63,7 @@ for (int stage = 0; stage <= 5; stage++) {
         if (errW < tolerance && errMu < tolerance)
             break;
     }
+    plot(w, value=true, fill=true, wait=true, cmm="Solution for n = " + n);
 }
 // errorFile << flush;
 
