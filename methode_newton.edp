@@ -27,14 +27,16 @@ real cpu = clock();
 // Parameters for the Newton method
 real newtonTolerance = 1e-6;
 int newtonMaxIterations = 50;
-Vh h, phi, muW, dMuDs, gradWNorm;
+Vh h, phi, gradWNorm;
+fespace Ph(Th, P0);
+Ph muW, dMuDs;
 
 // Continuation : résoudre d'abord pour n=1, puis effectuer cinq étapes
 // jusqu'à n=0.1 en utilisant chaque solution comme initialisation suivante.
 w = 0;
 
-for (int stage = 0; stage <= 5; stage++) {
-    n = 1.0 - 0.18 * stage;
+for (int stage = 0; stage <= 30; stage++) {
+    n = 1.0 - 0.03 * stage;
     cout << "Continuation : n = " << n << endl;
 
     for (int k = 0; k < newtonMaxIterations; k++) {
@@ -58,7 +60,7 @@ for (int stage = 0; stage <= 5; stage++) {
               + on(D, h=0);
         
         // Mise à jour de la solution
-        w = w + h;
+        w = w + 0.3*h;
         // plot(h, value=true, fill=true, wait=true, cmm="Newton correction h at iteration " + k+1);
         real errH = sqrt(int2d(Th)(h*h));
         cout << "Newton iteration " << k+1
