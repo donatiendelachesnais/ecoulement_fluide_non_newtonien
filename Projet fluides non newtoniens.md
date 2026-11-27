@@ -216,7 +216,7 @@ $$
 
 Nous remplaçons maintenant $DF(w^k)[h]$ par son expression calculée précédemment, ainsi que $F(w^k)$ par sa définition.
 
-On obtient finalement :
+On obtient finalement le problème <span style="color: blue;">(6)</span> :
 
 $$
 \boxed{
@@ -237,7 +237,7 @@ $$
 }
 $$
 
-On retrouve ainsi la formulation variationnelle (6) donnée dans l'énoncé.
+On retrouve ainsi la formulation variationnelle <span style="color: blue;">(6)</span> donnée dans l'énoncé.
 
 À chaque itération, le problème consiste donc à déterminer la correction $h$ à partir d'un problème linéaire, puisque les coefficients $\mu(|\nabla w^k|^2)$ et $\mu'(|\nabla w^k|^2)$ sont calculés à partir de l'approximation connue $w^k$.
 
@@ -248,6 +248,55 @@ $$
 $$
 
 On répète ensuite cette procédure jusqu'à ce que la correction soit suffisamment petite, ce qui indique que l'algorithme a convergé vers une solution du problème non linéaire.
+
+### Passage à la forme forte
+
+L'énoncé donne la matrice :
+$$
+M(\boldsymbol{\xi})
+=\mu(|\boldsymbol{\xi}|^2)I
++2\mu'(|\boldsymbol{\xi}|^2)\,\boldsymbol{\xi}\otimes\boldsymbol{\xi},
+$$
+
+Le produit tensoriel vérifie :
+$$
+(\boldsymbol{\xi}\otimes\boldsymbol{\xi})\boldsymbol{v}
+=\boldsymbol{\xi}(\boldsymbol{\xi}\cdot\boldsymbol{v}).
+$$
+
+On choisit :
+$$
+\boldsymbol{\xi}=\nabla w^k
+\qquad\text{et}\qquad
+\boldsymbol{v}=\nabla h.
+$$
+On obtient, après produit scalaire avec $\nabla\varphi$ :
+$$
+M(\nabla w^k)\nabla h\cdot\nabla\varphi
+=\mu(|\nabla w^k|^2)\nabla h\cdot\nabla\varphi
++2\mu'(|\nabla w^k|^2)
+(\nabla w^k\cdot\nabla h)
+(\nabla w^k\cdot\nabla\varphi).
+$$
+
+La formulation variationnelle <span style="color: blue;">(6)</span> s'écrit alors :
+$$
+\int_\Omega M(\nabla w^k)\nabla h\cdot\nabla\varphi
+=\beta\int_\Omega\varphi
+-\int_\Omega\mu(|\nabla w^k|^2)\nabla w^k\cdot\nabla\varphi,
+\qquad\forall\varphi\in H_D^1(\Omega).
+$$
+
+Par intégration par partie, on obtient le problème <span style="color: blue;">(7)</span> :
+
+$$
+-\nabla\cdot\left(M(\nabla w^k)\nabla h\right)
+=-\nabla\cdot\left(\mu\nabla w^k\right)+\beta
+\qquad\text{dans }\Omega.
+$$
+
+
+
 
 ## Problème couplé
 
