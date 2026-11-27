@@ -247,7 +247,7 @@ $$
 
 Nous remplaçons maintenant $DF(w^k)[h]$ par son expression calculée précédemment, ainsi que $F(w^k)$ par sa définition.
 
-On obtient finalement :
+On obtient finalement le problème <span style="color: blue;">(6)</span> :
 
 $$
 \boxed{
@@ -268,7 +268,7 @@ $$
 }
 $$
 
-On retrouve ainsi la formulation variationnelle (6) donnée dans l'énoncé.
+On retrouve ainsi la formulation variationnelle <span style="color: blue;">(6)</span> donnée dans l'énoncé.
 
 À chaque itération, le problème consiste donc à déterminer la correction $h$ à partir d'un problème linéaire, puisque les coefficients $\mu(|\nabla w^k|^2)$ et $\mu'(|\nabla w^k|^2)$ sont calculés à partir de l'approximation connue $w^k$.
 
