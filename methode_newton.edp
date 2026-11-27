@@ -14,7 +14,7 @@ Vh mu, muNext;
 // Parameters for the fixed-point method
 func beta = 200;
 real muT = 50;
-real n = 0.1;
+real n = 1;
 real epsilon = 1e-8;
 real tolerance = 1e-6;
 int maxIterations = 100;
@@ -29,39 +29,45 @@ real cpu = clock();
 // Parameters for the Newton method
 real newtonTolerance = 1e-6;
 int newtonMaxIterations = 50;
-Vh h, phi;
+Vh h, phi, muW, dMuDs, gradWNorm;
 
-// Initialisation : démarrer Newton avec la solution nulle.
+// Continuation : résoudre d'abord pour n=1, puis effectuer cinq étapes
+// jusqu'à n=0.1 en utilisant chaque solution comme initialisation suivante.
 w = 0;
 
-for (int k = 0; k < newtonMaxIterations; k++) {
-    solve Newton(h, phi, solver=LU)
-        = int2d(Th)(
-              muT * pow(sqrt(dx(w)*dx(w) + dy(w)*dy(w) + epsilon*epsilon), n-1)
-                * (dx(h)*dx(phi) + dy(h)*dy(phi))
-              + muT * (n-1)
-                * pow(sqrt(dx(w)*dx(w) + dy(w)*dy(w) + epsilon*epsilon), n-3)
-                * (dx(w)*dx(h) + dy(w)*dy(h))
-                * (dx(w)*dx(phi) + dy(w)*dy(phi))
-          )
-          - int2d(Th)(
-              - muT
-                * pow(sqrt(dx(w)*dx(w) + dy(w)*dy(w) + epsilon*epsilon), n-1)
-                * (dx(w)*dx(phi) + dy(w)*dy(phi))
-              + beta*phi
-          )
-          + on(C1, h=0)
-          + on(C2, h=0)
-          + on(D, h=0);
+for (int stage = 0; stage <= 5; stage++) {
+    n = 1.0 - 0.18 * stage;
+    cout << "Continuation : n = " << n << endl;
 
-    w = w + h;
+    for (int k = 0; k < newtonMaxIterations; k++) {
+        gradWNorm = sqrt(dx(w)*dx(w) + dy(w)*dy(w) + epsilon*epsilon);
+        muW = muT * pow(gradWNorm, n-1);
+        dMuDs = 0.5 * muT * (n-1) * pow(gradWNorm, n-3);
 
-    real errH = sqrt(int2d(Th)(h*h));
-    cout << "Newton iteration " << k+1
-         << " : ||h|| = " << errH << endl;
+        solve Newton(h, phi, solver=LU)
+            = int2d(Th)(
+                  muW * (dx(h)*dx(phi) + dy(h)*dy(phi))
+                  + 2*dMuDs
+                    * (dx(w)*dx(h) + dy(w)*dy(h))
+                    * (dx(w)*dx(phi) + dy(w)*dy(phi))
+              )
+              - int2d(Th)(
+                  beta*phi
+                  - muW * (dx(w)*dx(phi) + dy(w)*dy(phi))
+              )
+              + on(C1, h=0)
+              + on(C2, h=0)
+              + on(D, h=0);
 
-    if (errH < newtonTolerance)
-        break;
+        w = w + h;
+
+        real errH = sqrt(int2d(Th)(h*h));
+        cout << "Newton iteration " << k+1
+             << " : ||h|| = " << errH << endl;
+
+        if (errH < newtonTolerance)
+            break;
+    }
 }
 
 // Parameter k
@@ -83,9 +89,9 @@ solve Temperature(T, v, solver=LU)
     - int2d(Th)(    // The right hand side
           f*v
     )
-        + int1d(Th, C2)( // Condition de Neumann : dT/dn = fluxC2
-            fluxC2*v
-        )
+    - int1d(Th, C2)( // Condition de Neumann : dT/dn = fluxC2
+        fluxC2*v
+    )
     + on(C1, T=0)    // Dirichlet condition on C1
     + on(D, T=100);
 
