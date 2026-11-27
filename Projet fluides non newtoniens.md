@@ -1,4 +1,4 @@
-## Equations
+    ## Equations
 
 <span style="color: blue;">(1)</span>
 $-\nabla.(\mu \nabla w) = \beta$
@@ -12,7 +12,7 @@ $\mu_T(T) = \mu_0 \exp(-\alpha (T - T_0))$
 <span style="color: blue;">(4)</span>
 $-k \Delta T = \mu |\nabla w|^2$
 
-## Formulation faible du problème
+## Formulation faible du problème (alpha = 0)
 
 A partir du problème  <span style="color: blue;">(1)-(2)</span>, on obtient :
 $$
