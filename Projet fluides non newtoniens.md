@@ -1,4 +1,4 @@
-    ## Equations
+## Equations
 
 <span style="color: blue;">(1)</span>
 $-\nabla.(\mu \nabla w) = \beta$
@@ -21,7 +21,6 @@ $$
 =
 \beta\int_\Omega\varphi
 \qquad \forall\varphi\in H_D^1(\Omega).
-
 $$
 
 
