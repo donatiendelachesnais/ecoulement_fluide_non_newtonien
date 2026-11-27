@@ -18,13 +18,13 @@ real ntarget = 0.7;
 real epsilon = 1e-8;
 real tolerance = 1e-6;
 int maxIterations = 100;
-real alpha = 0.;
+real alpha = 0.01;
 real T0 = 0.;
 
 // Initialisation
 w = 0;
 mu = mu0;
-alpha = 0.1;
+alpha = 0.016;
 
 real cpu = clock();
 // ofstream errorFile("iteration_errors.csv");
@@ -36,52 +36,59 @@ real k = 1.0;
 func fluxC2 = 0.;
 T = 0;
 
-for (int stage = 0; stage <= 5; stage++) {
-    real pas = (1.0 - ntarget) / 5.0;
-    real n = 1.0 - pas * stage;
-    cout << "Continuation : n = " << n << endl;
+for (int pasalpha = 0; pasalpha <= 200; pasalpha++) {
+    alpha = 0.001 * pasalpha;
+    for (int stage = 0; stage <= 5; stage++) {
+        real pas = (1.0 - ntarget) / 5.0;
+        real n = 1.0 - pas * stage;
+        
+        cout << "Continuation : n = " << n << endl;
 
-    for (int iter = 0; iter < maxIterations; iter++) {
-        // Freeze viscosity at w^iter: the w-problem is linear.
-        muNext = mu0 * exp(-alpha*(T-T0)) * pow(
-    sqrt(dx(w)*dx(w) + dy(w)*dy(w) + epsilon*epsilon), n-1
-        );
+        for (int iter = 0; iter < maxIterations; iter++) {
+            // Freeze viscosity at w^iter: the w-problem is linear.
+            muNext = mu0 * exp(-alpha*(T-T0)) * pow(
+        sqrt(dx(w)*dx(w) + dy(w)*dy(w) + epsilon*epsilon), n-1
+            );
 
-        solve FixedPoint(wNext, v, solver=LU)
-            = int2d(Th)(muNext*(dx(wNext)*dx(v) + dy(wNext)*dy(v)))
-            - int2d(Th)(beta*v)
-            + on(C1, wNext=0) + on(C2, wNext=0) + on(D, wNext=0);
+            solve FixedPoint(wNext, v, solver=LU)
+                = int2d(Th)(muNext*(dx(wNext)*dx(v) + dy(wNext)*dy(v)))
+                - int2d(Th)(beta*v)
+                + on(C1, wNext=0) + on(C2, wNext=0) + on(D, wNext=0);
 
-        // With w^(k+1) and its frozen viscosity, solve the linear T-problem.
-        solve Temperature(TNext, v, solver=LU)
-            = int2d(Th)(dx(TNext)*dx(v) + dy(TNext)*dy(v))
-            - int2d(Th)(
-                ((dx(wNext)*dx(wNext) + dy(wNext)*dy(wNext))*muNext/k)*v
-              )
-            - int1d(Th, C2)(fluxC2*v)
-            + on(C1, TNext=0)
-            + on(D, TNext=100);
+            // With w^(k+1) and its frozen viscosity, solve the linear T-problem.
+            solve Temperature(TNext, v, solver=LU)
+                = int2d(Th)(dx(TNext)*dx(v) + dy(TNext)*dy(v))
+                - int2d(Th)(
+                    ((dx(wNext)*dx(wNext) + dy(wNext)*dy(wNext))*muNext/k)*v
+                )
+                - int1d(Th, C2)(fluxC2*v)
+                + on(C1, TNext=0)
+                + on(D, TNext=100);
 
-        real errW = sqrt(int2d(Th)((wNext-w)*(wNext-w)));
-        real errT = sqrt(int2d(Th)((TNext-T)*(TNext-T)));
-        real errMu = sqrt(int2d(Th)((muNext-mu)*(muNext-mu)));
-        cout << "Iteration " << iter+1
-             << " : errW = " << errW
-             << " , errT = " << errT
-             << " , errMu = " << errMu << endl;
+            real errW = sqrt(int2d(Th)((wNext-w)*(wNext-w)));
+            real errT = sqrt(int2d(Th)((TNext-T)*(TNext-T)));
+            real errMu = sqrt(int2d(Th)((muNext-mu)*(muNext-mu)));
+            cout << "Iteration " << iter+1
+                << " : errW = " << errW
+                << " , errT = " << errT
+                << " , errMu = " << errMu << endl
+                << " , alpha = " << alpha << endl;
 
-        w = wNext;
-        T = TNext;
-        mu = muNext;
+            w = wNext;
+            T = TNext;
+            mu = muNext;
 
-        if (errW < tolerance && errT < tolerance && errMu < tolerance)
-            break;
+            if (errW < tolerance && errT < tolerance && errMu < tolerance)
+                break;
+        }
     }
+    // Plot the result
+    plot(T, value=true, fill=true, wait=true, cmm="Temperature distribution"+
+        " for alpha = " + alpha);
+    plot(w, value=true, fill=true, wait=true, cmm="w distribution"+
+        " for alpha = " + alpha);
 }
 
-// Plot the result
-plot(T, value=true, fill=true, wait=true, cmm="Temperature distribution");
-plot(w, value=true, fill=true, wait=true, cmm="w distribution");
 
 cout << "CPU time = " << (clock()-cpu) << endl;
 
